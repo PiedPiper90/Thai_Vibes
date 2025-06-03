@@ -33,11 +33,7 @@ def revoke_link_later(chat_id, invite_link, delay=30):
 @bot.message_handler(commands=['start'])
 def send_temporary_link(message):
     if message.chat.type != "private":
-        bot.send_message(
-            message.chat.id,
-            "Пожалуйста, напишите мне в личные сообщения, чтобы получить ссылку на чат!"
-        )
-        return
+        return  # Просто ничего не делаем в общем чате
 
     try:
         expire_time = datetime.now() + timedelta(seconds=60)
