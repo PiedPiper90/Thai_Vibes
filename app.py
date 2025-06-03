@@ -37,7 +37,7 @@ def getMessage():
 def webhook():
     bot.remove_webhook()
     # Замените на ваш Railway URL после деплоя
-    webhook_url = os.environ.get("RAILWAY_STATIC_URL", "https://your-app.up.railway.app")
+    webhook_url = os.environ.get("RAILWAY_STATIC_URL", "thaivibes-production.up.railway.app")
     bot.set_webhook(url=webhook_url + '/' + BOT_TOKEN)
     return "Webhook set!", 200
 
