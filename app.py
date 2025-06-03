@@ -5,7 +5,7 @@ import threading
 from datetime import datetime, timedelta
 from flask import Flask, request
 
-BOT_TOKEN = "ВАШ_ТОКЕН_БОТА"
+BOT_TOKEN = "7426978790:AAEaAZJIv2sZnoH1BAeSJ6zPMBXfnqZ2Prw"
 CHAT_ID = -1002063123602  # ID вашего чата
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -118,9 +118,6 @@ def webhook():
     webhook_url = "https://thaivibes-production.up.railway.app"
     bot.set_webhook(url=webhook_url + '/' + BOT_TOKEN)
     return "Webhook set!", 200
-
-if __name__ == "__main__":
-    server.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
 
 if __name__ == "__main__":
     server.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
