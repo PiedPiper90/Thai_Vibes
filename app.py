@@ -21,14 +21,6 @@ def revoke_link_later(chat_id, invite_link, delay=10):
     threading.Thread(target=worker).start()
 
 @bot.message_handler(commands=['start'])
-def start_message(message):
-    bot.send_message(
-        message.chat.id,
-        "Привет! Этот бот выдаёт временные ссылки для входа в чат.\n"
-        "Чтобы получить ссылку, отправьте команду /link"
-    )
-
-@bot.message_handler(commands=['link'])
 def send_temporary_link(message):
     try:
         expire_time = datetime.now() + timedelta(seconds=10)
@@ -42,7 +34,10 @@ def send_temporary_link(message):
 
         bot.send_message(
             message.chat.id,
-            f"Ваша уникальная ссылка для входа в чат (действует 10 секунд):\n{invite_link}"
+            f"🌴 Добро пожаловать!\n\n"
+            f"Ваша уникальная ссылка для входа в чат о Таиланде и Пхукете "
+            f"(действует 10 секунд):\n\n{invite_link}\n\n"
+            f"⚠️ Поторопитесь! Ссылка исчезнет через 10 секунд."
         )
 
         revoke_link_later(CHAT_ID, invite_link, delay=10)
