@@ -1,45 +1,47 @@
 import telebot
 from telebot import types
 import os
-from flask import Flask, request
+import threading
+from datetime import datetime, timedelta
 
 BOT_TOKEN = "7426978790:AAEaAZJIv2sZnoH1BAeSJ6zPMBXfnqZ2Prw"
-PRIVATE_CHAT_LINK = "https://t.me/+_oVu5U6o31A2OGQy"
+CHAT_ID = -1002063123602  # ID вашего чата
 
 bot = telebot.TeleBot(BOT_TOKEN)
-server = Flask(__name__)
 
-@bot.message_handler(commands=['start'])
-def start_message(message):
-    markup = types.InlineKeyboardMarkup()
-    button = types.InlineKeyboardButton("получить ссылку на чат", callback_data="get_link")
-    markup.add(button)
-    bot.send_message(
-        message.chat.id,
-        "Добро пожаловать! Нажмите кнопку ниже, чтобы получить ссылку на чат:",
-        reply_markup=markup
-    )
+def revoke_link_later(chat_id, invite_link, delay=10):
+    # Функция для удаления ссылки через delay секунд
+    def worker():
+        try:
+            threading.Event().wait(delay)
+            bot.revoke_chat_invite_link(chat_id, invite_link)
+        except Exception as e:
+            print(f"Ошибка при удалении ссылки: {e}")
+    threading.Thread(target=worker).start()
 
-@bot.callback_query_handler(func=lambda call: call.data == "get_link")
-def send_chat_link(call):
-    bot.answer_callback_query(call.id)
-    bot.send_message(
-        call.message.chat.id,
-        f"Вот ссылка на мой приватный чат:\n{PRIVATE_CHAT_LINK}"
-    )
+@bot.message_handler(commands=['link'])
+def send_temporary_link(message):
+    try:
+        # Создаем ссылку, действующую 10 секунд, только для одного пользователя
+        expire_time = datetime.now() + timedelta(seconds=10)
+        expire_timestamp = int(expire_time.timestamp())
+        invite = bot.create_chat_invite_link(
+            chat_id=CHAT_ID,
+            expire_date=expire_timestamp,
+            member_limit=1
+        )
+        invite_link = invite.invite_link
 
-@server.route('/' + BOT_TOKEN, methods=['POST'])
-def getMessage():
-    bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
-    return "!", 200
+        bot.send_message(
+            message.chat.id,
+            f"Ваша уникальная ссылка для входа в чат (действует 10 секунд):\n{invite_link}"
+        )
 
-@server.route("/")
-def webhook():
-    bot.remove_webhook()
-    # Замените на ваш Railway URL после деплоя
-    webhook_url = os.environ.get("RAILWAY_STATIC_URL", "thaivibes-production.up.railway.app")
-    bot.set_webhook(url=webhook_url + '/' + BOT_TOKEN)
-    return "Webhook set!", 200
+        # Запускаем удаление ссылки через 10 секунд
+        revoke_link_later(CHAT_ID, invite_link, delay=10)
+
+    except Exception as e:
+        bot.send_message(message.chat.id, f"Ошибка при создании ссылки: {e}")
 
 if __name__ == "__main__":
-    server.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+    bot.polling()
