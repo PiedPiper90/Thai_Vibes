@@ -11,9 +11,6 @@ CHAT_ID = -1002063123602  # ID вашего чата
 bot = telebot.TeleBot(BOT_TOKEN)
 server = Flask(__name__)
 
-# Список пользователей, которые уже получили ссылку
-users_with_link = set()
-
 def revoke_link_later(chat_id, invite_link, delay=10):
     def worker():
         try:
@@ -25,31 +22,28 @@ def revoke_link_later(chat_id, invite_link, delay=10):
 
 @bot.message_handler(commands=['start'])
 def send_temporary_link(message):
-    user_id = message.from_user.id
-    if user_id not in users_with_link:
-        try:
-            expire_time = datetime.now() + timedelta(seconds=10)
-            expire_timestamp = int(expire_time.timestamp())
-            invite = bot.create_chat_invite_link(
-                chat_id=CHAT_ID,
-                expire_date=expire_timestamp,
-                member_limit=1
-            )
-            invite_link = invite.invite_link
+    try:
+        expire_time = datetime.now() + timedelta(seconds=10)
+        expire_timestamp = int(expire_time.timestamp())
+        invite = bot.create_chat_invite_link(
+            chat_id=CHAT_ID,
+            expire_date=expire_timestamp,
+            member_limit=1
+        )
+        invite_link = invite.invite_link
 
-            bot.send_message(
-                message.chat.id,
-                f"🌴 Добро пожаловать!\n\n"
-                f"Ваша уникальная ссылка для входа в чат о Таиланде и Пхукете "
-                f"(действует 10 секунд):\n\n{invite_link}\n\n"
-                f"⚠️ Поторопитесь! Ссылка исчезнет через 10 секунд."
-            )
+        bot.send_message(
+            message.chat.id,
+            f"🌴 Добро пожаловать!\n\n"
+            f"Ваша уникальная ссылка для входа в чат о Таиланде и Пхукете "
+            f"(действует 10 секунд):\n\n{invite_link}\n\n"
+            f"⚠️ Поторопитесь! Ссылка исчезнет через 10 секунд."
+        )
 
-            revoke_link_later(CHAT_ID, invite_link, delay=10)
-            users_with_link.add(user_id)
+        revoke_link_later(CHAT_ID, invite_link, delay=10)
 
-        except Exception as e:
-            bot.send_message(message.chat.id, f"Ошибка при создании ссылки: {e}")
+    except Exception as e:
+        bot.send_message(message.chat.id, f"Ошибка при создании ссылки: {e}")
 
 @bot.chat_member_handler()
 def on_user_join(update):
@@ -57,7 +51,7 @@ def on_user_join(update):
     user_id = update.new_chat_member.user.id
     status = update.new_chat_member.status
 
-    if status == "member" and user_id not in users_with_link:
+    if status == "member":
         # Ограничиваем пользователя (не может писать)
         bot.restrict_chat_member(
             chat_id,
@@ -118,6 +112,9 @@ def webhook():
     webhook_url = "https://thaivibes-production.up.railway.app"
     bot.set_webhook(url=webhook_url + '/' + BOT_TOKEN)
     return "Webhook set!", 200
+
+if __name__ == "__main__":
+    server.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
 
 if __name__ == "__main__":
     server.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
