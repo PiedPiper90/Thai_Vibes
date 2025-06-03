@@ -23,7 +23,7 @@ def revoke_link_later(chat_id, invite_link, delay=10):
 @bot.message_handler(commands=['start'])
 def send_temporary_link(message):
     try:
-        expire_time = datetime.now() + timedelta(seconds=10)
+        expire_time = datetime.now() + timedelta(seconds=30)
         expire_timestamp = int(expire_time.timestamp())
         invite = bot.create_chat_invite_link(
             chat_id=CHAT_ID,
