@@ -63,16 +63,17 @@ def send_temporary_link(message):
         bot.send_message(message.chat.id, error_msg)
         logger.error(error_msg)
 
-@bot.chat_member_handler()
-def on_user_join(update):
+# Заменяем несуществующий декоратор на обработку через content_types
+@bot.message_handler(content_types=['new_chat_members'])
+def on_user_join(message):
     """Обрабатывает вступление нового участника в чат"""
     try:
-        chat_id = update.chat.id
-        user_id = update.new_chat_member.user.id
-        status = update.new_chat_member.status
-        user_name = update.new_chat_member.user.first_name or "Друг"
+        chat_id = message.chat.id
+        
+        for new_member in message.new_chat_members:
+            user_id = new_member.id
+            user_name = new_member.first_name or "Друг"
 
-        if status == "member":
             # Ограничиваем пользователя (не может писать)
             bot.restrict_chat_member(
                 chat_id,
@@ -137,7 +138,7 @@ def verify_user(call):
         logger.error(f"Ошибка при верификации пользователя: {e}")
         bot.answer_callback_query(call.id, "Произошла ошибка. Попробуйте еще раз.")
 
-# Webhook для Railway
+# Webhook для Railway/Heroku
 @server.route('/' + BOT_TOKEN, methods=['POST'])
 def getMessage():
     """Обрабатывает входящие обновления от Telegram"""
@@ -168,17 +169,18 @@ def health_check():
     """Проверка здоровья сервиса"""
     return "OK", 200
 
-# Обработчик для неизвестных команд (чтобы не было строки ввода)
+# Обработчик для неизвестных команд
 @bot.message_handler(func=lambda message: True, content_types=['text'])
 def handle_unknown_command(message):
     """Обработчик для всех текстовых сообщений, кроме команд"""
-    # Создаем клавиатуру с кнопкой "Start"
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-    start_button = types.KeyboardButton("/start")
-    markup.add(start_button)
+    if message.chat.type == "private":
+        # Создаем клавиатуру с кнопкой "Start"
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+        start_button = types.KeyboardButton("/start")
+        markup.add(start_button)
 
-    # Отправляем сообщение с кнопкой "Start"
-    bot.send_message(message.chat.id, "Пожалуйста, используйте команду /start", reply_markup=markup)
+        # Отправляем сообщение с кнопкой "Start"
+        bot.send_message(message.chat.id, "Пожалуйста, используйте команду /start", reply_markup=markup)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
